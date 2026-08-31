@@ -110,11 +110,11 @@ git --version
 `<リポジトリのURL>` の部分は実際のGitHub URLに置き換えてください。
 
 ```bash
-git clone <リポジトリのURL>
-cd autoHP
+git clone https://github.com/Abel-elliptic/auto-mysoku
+cd auto-mysoku
 ```
 
-`cd autoHP` の後、ターミナルの表示が `.../autoHP` のような形になっていれば成功です。
+`cd auto-mysoku` の後、ターミナルの表示が `.../auto-mysoku` のような形になっていれば成功です。
 
 ---
 
@@ -287,7 +287,7 @@ npx tsc --noEmit
 
 ### 6-1. 設定ファイルを作る
 
-`autoHP` フォルダの一番上（README.mdがある場所）に `.env.example` という
+`auto-mysoku` フォルダの一番上（README.mdがある場所）に `.env.example` という
 ファイルがあります。これをコピーして `.env` という名前のファイルを作り、
 中身を実際の値に書き換えます。
 
