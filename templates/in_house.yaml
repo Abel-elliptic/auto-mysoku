@@ -1,0 +1,44 @@
+# 自社マイソク（is_own=true）テンプレート設定
+#
+# 座標系はすべてA3基準キャンバス（page_size @ dpi から算出されるpx）。
+# A4は compositor.downscale_a3_to_a4() による縮小生成のみで作るため、
+# ここにA4用の座標は持たせない。
+#
+# 重要: 建物名・賃料・住所などの文字情報はすべて既存GAS
+# （gas/src/RentalDataLookup.ts の updateSlideWithData()）が
+# Slides側にreplaceAllTextで焼き込んでからエクスポートするため、
+# ここでは text_fields を持たない（Python側で文字を描画し直すと二重管理になる）。
+# text_fields描画機能自体はcompositor.pyに残しているので、将来
+# 別の理由でPython側描画が必要になった場合はこのYAMLに追記すればよい。
+#
+# 写真配置座標（image_slots）は未確定。実際のSlidesファイル
+# （1QB2132Hz0XMREBKmxddQTp-9S34dijgy2oUeBODyVtM）に仮の画像を配置し、
+# 「レイアウト情報取得」メニュー（LayoutCaptureTool.ts）でEMU単位の座標を取得、
+# px（このYAMLのdpi基準）へ変換した上でimage_slotsへ追記すること。
+# 手順の詳細は docs/template_config_spec.md を参照。
+# 座標が確定するまでは背景（Slidesエクスポート画像）のみの状態とする。
+
+template_type: in_house
+display_name: "自社マイソク"
+slides_template_file_id: "1QB2132Hz0XMREBKmxddQTp-9S34dijgy2oUeBODyVtM"
+
+page_size:
+  width_mm: 420   # A3 横向き（要確認: 実際のSlidesページの向き・サイズと一致するか）
+  height_mm: 297
+dpi: 300
+
+# 要確認: 実際に必須とすべき写真の種類・ファイル名（living.jpg等の命名規則含む）。
+# LayoutCaptureToolでの座標取得と合わせて確定させる。
+required_images: []
+optional_images: []
+
+image_slots:
+  - key: background
+    source: slides_export
+    x_px: 0
+    y_px: 0
+    width_px: 4961
+    height_px: 3508
+    fit: stretch
+
+text_fields: []

@@ -1,0 +1,39 @@
+# ITANDIマイソク テンプレート設定 — 【未整備・将来追加用のプレースホルダー】
+#
+# 実際にはこのテンプレート用のSlidesファイルはまだ存在しない
+# （2026-08時点でユーザーに確認済み: 自社/一般の2種類のみが本番運用中）。
+# gas/src/Config.ts の TEMPLATE_TYPES にも含まれておらず、
+# 「マイソク作成」実行時にこの種別のジョブが作られることはない。
+#
+# 将来ITANDI向けのSlidesファイルが用意された場合は、以下を行うこと:
+# 1. slides_template_file_id を実際のファイルIDに差し替える
+# 2. gas/src/Config.ts の TEMPLATE_TYPES に "itandi" を追加する
+# 3. gas/src/JobBatchCreator.ts のtemplateType→is_own相当のマッピング、
+#    または gas/src/RentalDataLookup.ts の updateSlideWithData() の
+#    Slidesファイル切り替えロジックに "itandi" 用の分岐を追加する
+#    （現状はis_own(true/false)の2値switchのため、3値化の設計変更が必要）
+# 4. 本ファイルの image_slots を、実際のSlidesファイルへ LayoutCaptureTool で
+#    座標取得したうえで記入する
+
+template_type: itandi
+display_name: "ITANDIマイソク（未整備）"
+slides_template_file_id: "REPLACE_ME"
+
+page_size:
+  width_mm: 420
+  height_mm: 297
+dpi: 300
+
+required_images: []
+optional_images: []
+
+image_slots:
+  - key: background
+    source: slides_export
+    x_px: 0
+    y_px: 0
+    width_px: 4961
+    height_px: 3508
+    fit: stretch
+
+text_fields: []

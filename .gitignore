@@ -1,0 +1,29 @@
+# Secrets / local config
+.env
+*.local.env
+service-account*.json
+*.key.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / clasp
+node_modules/
+.clasp.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+name: gas-lint
+
+on:
+  push:
+    paths:
+      - "gas/**"
+      - ".github/workflows/gas-lint.yml"
+  pull_request:
+    paths:
+      - "gas/**"
+      - ".github/workflows/gas-lint.yml"
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npx tsc --noEmit

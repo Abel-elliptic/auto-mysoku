@@ -1,0 +1,14 @@
+{
+  "name": "autohp-gas",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "push": "clasp push"
+  },
+  "devDependencies": {
+    "@types/google-apps-script": "^1.0.83",
+    "@google/clasp": "^2.4.2",
+    "typescript": "^5.4.0"
+  }
+}
