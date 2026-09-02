@@ -89,7 +89,9 @@ Canvaで手作業作成している賃貸マイソクを、GAS起点で自動生
    - `processNewRentalsForOwn()`はそのまま変更不要（`batchId`未指定＝`undefined`で
      呼ばれるため、`updateSlideWithData`側の`if (!batchId) return;`によりジョブ管理への
      書き込みは行われず、従来どおりスライド作成のみで終わる＝後方互換）
-4. `.clasp.json`の`scriptId`を実際のIDに設定し、`clasp push`する
+4. `.clasp.json`の`scriptId`を実際のIDに設定し、`npm run push`する
+   （`clasp`v3は`.ts`を自動変換しないため、`gas/package.json`の`push`スクリプトが
+   `tsc -p tsconfig.build.json`でのビルドを挟んでから`clasp push`する）
 
 この手順により、`exportSlidePageAsImage()`・`appendSingleJobRow()`（このリポジトリの
 `SlidesBackgroundGenerator.ts`・`SheetsRepository.ts`で定義）が、コピーした`コード.js`

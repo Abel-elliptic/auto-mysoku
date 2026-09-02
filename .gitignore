@@ -31,6 +31,18 @@ gas/src/updateSParking.js
 gas/src/autoUpdateHP.js
 gas-backup/
 
+# clasp v3はTypeScriptを自動変換しないため、`npm run build`（tsc）で
+# gas/src/配下の.tsファイルをその場で.jsへコンパイルしてからpushする運用にしている
+# （gas/package.jsonの"push"スクリプト参照）。コンパイル成果物はビルドのたびに
+# 再生成されるためコミットしない。
+gas/src/Config.js
+gas/src/IdGenerator.js
+gas/src/JobBatchCreator.js
+gas/src/LayoutCaptureTool.js
+gas/src/Menu.js
+gas/src/SheetsRepository.js
+gas/src/SlidesBackgroundGenerator.js
+
 # Logs
 *.log
 logs/

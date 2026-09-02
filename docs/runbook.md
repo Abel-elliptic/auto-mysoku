@@ -12,12 +12,17 @@
    「ジョブ管理」「レイアウト情報」の2タブを追加する（既存タブは変更しない）。
 2. `gas/` をこのスプレッドシートに `clasp` で紐付け、`.clasp.json.example` を参考に
    `.clasp.json` を作成する。
-3. `appsscript.json` の Slides API / Drive API（高度なサービス）が有効になっていることを確認する。
-4. Script Properties に `BACKGROUND_DRIVE_FOLDER_ID` を設定する
+3. `clasp clone <scriptId>` で既存プロジェクトをバックアップし、既存ファイル
+   （コード.js・const.js・reminder.js・updateSParking.js・autoUpdateHP.js）を
+   `gas/src/` へコピーする。`コード.js`へ`docs/architecture.md`記載の最小限の変更を
+   適用する（詳細は同ドキュメント「既存Apps Scriptプロジェクトとの共存について」参照）。
+4. `appsscript.json` の Slides API / Drive API（高度なサービス）が有効になっていることを確認する。
+5. Script Properties に `BACKGROUND_DRIVE_FOLDER_ID` を設定する
    （SlidesファイルIDは`templates/*.yaml`に実IDとして直接記載済みのため、
    Script Propertiesでの設定は不要）。
-5. `npx clasp push` でデプロイし、スプレッドシートを開いて「マイソク」メニューが
-   表示されることを確認する。
+6. `npm run push` でデプロイする（`clasp`v3は`.ts`を自動変換しないため、
+   `tsc`でのビルドを挟んでから`clasp push`するnpmスクリプトを使う）。
+   スプレッドシートを開いて「マイソク」メニューが表示されることを確認する。
 
 ### 社内PC側
 

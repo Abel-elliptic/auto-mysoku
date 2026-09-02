@@ -56,10 +56,16 @@ pytest
 # GAS側
 cd gas
 npm install
-npx tsc --noEmit      # 型チェック
+npm run typecheck     # 型チェック（tsc --noEmit）
 cp .clasp.json.example .clasp.json  # scriptIdを実際の値に置き換えて使用
-npx clasp push
+npm run push          # tscで.tsを.jsへビルドしてからclasp pushする
 ```
+
+**注意**: `clasp`はv2系とv3系で`.ts`ファイルの扱いが異なる。v3（`npm install -g @google/clasp`で
+入る最新版）は`.ts`を自動変換しないため、このリポジトリでは`npm run push`
+（`gas/package.json`）で`tsc -p tsconfig.build.json`によるビルドを挟んでから
+`clasp push`する。`npx clasp push`を直接使うと`.ts`ファイルが送信されず、
+`.js`ファイル（前段でコピーした既存ファイル分のみ）しか反映されない点に注意。
 
 `.env.example` を `.env` にコピーし、実際の値を設定してから
 `python -m autohp.job_poller` で社内PC側のポーラーを起動する。

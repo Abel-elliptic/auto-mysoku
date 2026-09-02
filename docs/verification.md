@@ -48,9 +48,9 @@
   → `25 passed`、ruffが `All checks passed!` になることを確認
 - [ ] GAS:
   ```bash
-  cd gas && npm install && npx tsc --noEmit
+  cd gas && npm install && npm run typecheck && npm run build
   ```
-  → エラー0件（出力なし）で終了することを確認
+  → typecheckはエラー0件（出力なし）、buildは`src/*.js`が生成されて終了することを確認
 
 ## 2. GAS側の手動確認
 
