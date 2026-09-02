@@ -6,9 +6,14 @@ Canvaでの手作業を、GAS（司令塔）+ 社内PC上のPython（画像合�
 
 詳細設計は [`docs/architecture.md`](docs/architecture.md) を参照。
 
-実際に本番運用中のスプレッドシート・GASコード（`gas/src/RentalDataLookup.ts`、
-既存の`processNewRentals`等を移植・拡張したもの）と統合し、1回の「マイソク作成」
-操作で自社マイソク・一般マイソクの2種類を生成する（ITANDIマイソクは将来追加予定）。
+実際に本番運用中のスプレッドシート・GASプロジェクト（`processNewRentals`等の
+既存コードを含む）と統合し、1回の「マイソク作成」操作で自社マイソク・一般マイソクの
+2種類を生成する（ITANDIマイソクは将来追加予定）。**このリポジトリは既存GASプロジェクトの
+コード全体は含まない**（本番運用中の他機能・機密情報を含むため）。`gas/src/`には
+新規追加分のみが入っており、実際に`clasp push`する際は既存ファイル
+（`コード.js`・`const.js`・`reminder.js`・`updateSParking.js`・`autoUpdateHP.js`）を
+ローカルの`gas/src/`へ手動でコピーしてから行う。詳細は
+[`docs/architecture.md`](docs/architecture.md)「既存Apps Scriptプロジェクトとの共存について」を参照。
 
 ## 全体像
 

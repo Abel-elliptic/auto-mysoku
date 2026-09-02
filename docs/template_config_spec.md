@@ -43,7 +43,7 @@
 
 **重要**: 実際に運用する `templates/in_house.yaml` / `templates/general.yaml` では
 `text_fields` は空リストにしている。建物名・賃料・住所等の文字情報は、
-`gas/src/RentalDataLookup.ts` の `updateSlideWithData()` が既にSlides側で
+既存のコード.js（実プロジェクトのファイル）の `updateSlideWithData()` が既にSlides側で
 `replaceAllText()` により焼き込んでからエクスポートしているため、Pythonで
 重ねて描画すると二重管理・表示崩れの原因になる。TextField描画機能自体は
 `compositor.py` に残しているので、将来Slides側で扱いきれない文字要素が

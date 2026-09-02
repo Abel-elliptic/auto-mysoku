@@ -9,12 +9,13 @@
 
 各項目はチェックボックスで進捗を管理する。手順の実行結果は末尾の「結果記録」に記入する。
 
-> **重要**: 本システムは実際に本番運用中のスプレッドシート・GASコード
-> （`gas/src/RentalDataLookup.ts`）と統合している。テスト目的で実データを
-> 誤って書き換えないよう、特に「マイソク作成」の実行前には対象行が
-> テスト専用の行であることを必ず確認すること。詳細は
-> [`architecture.md`](architecture.md)「実在のスプレッドシート・GASコードとの
-> 統合について」を参照。
+> **重要**: 本システムは実際に本番運用中のスプレッドシート・GASプロジェクトと
+> 統合している。そのプロジェクトにはこのシステムと無関係な本番機能
+> （退去リマインドメール・駐車場空き状況更新・外部サイトへのデータ同期等）も
+> 含まれるため、`clasp push`前には必ず`clasp clone`でバックアップを取ること。
+> テスト目的で実データを誤って書き換えないよう、「マイソク作成」の実行前には
+> 対象行がテスト専用の行であることも必ず確認すること。詳細は
+> [`architecture.md`](architecture.md)「既存Apps Scriptプロジェクトとの共存について」を参照。
 
 ## 0. 前提条件チェックリスト
 
@@ -24,10 +25,14 @@
 - [ ] 対象スプレッドシートに「ジョブ管理」「レイアウト情報」の2タブを新規作成済み
       （既存の`新規募集家賃管理`・`ITANDI`・`入退去管理`・`駐車場価格設定`タブは
       変更不要。列定義は [`sheets_schema.md`](sheets_schema.md) 参照）
-- [ ] `gas/` を対象スプレッドシートに `clasp` で紐付け、`clasp push` 済み
+- [ ] 既存Apps Scriptプロジェクトを`clasp clone`でバックアップ済み、その既存ファイル
+      （コード.js・const.js・reminder.js・updateSParking.js・autoUpdateHP.js）を
+      ローカルの`gas/src/`へコピー済み、`コード.js`へ`docs/architecture.md`記載の
+      最小限の変更を適用済み
+- [ ] `.clasp.json`のscriptIdを実プロジェクトのIDに設定し、`clasp push` 済み
 - [ ] Script Properties に `BACKGROUND_DRIVE_FOLDER_ID` を設定済み
       （`SLIDES_TEMPLATE_FILE_ID_*` は現在 `templates/*.yaml` 内に実IDを直接記載しており
-      GAS側では未使用 — `RentalDataLookup.ts` が実IDをハードコードで参照する）
+      GAS側では未使用 — コード.js側が実IDをハードコードで参照する）
 - [ ] `新規募集家賃管理` タブに、テスト用に安全に使える行が用意されている
       （実データを誤って上書きしないこと）
 - [ ] テスト用NAS共有（または検証用SMBサーバ）が用意されている

@@ -2,10 +2,11 @@
  * Slidesの1ページを画像としてエクスポートし、Driveへ保存する共通関数。
  *
  * 実際にスライドを複製し、部屋の文字情報（建物名・賃料等）を埋め込む処理は
- * RentalDataLookup.ts の updateSlideWithData() が担当する（既存の本番運用中
- * ロジックをそのまま再利用しているため、このファイルでは新たにスライドを
- * 複製・生成する処理は持たない）。updateSlideWithData() は文字埋め込みが
- * 終わったスライドをこの exportSlidePageAsImage() に渡し、画像化してもらう。
+ * コード.js（実プロジェクトの既存ファイル、このリポジトリには含まれない）の
+ * updateSlideWithData() が担当する（既存の本番運用中ロジックをそのまま再利用
+ * しているため、このファイルでは新たにスライドを複製・生成する処理は持たない）。
+ * updateSlideWithData() は文字埋め込みが終わったスライドをこの
+ * exportSlidePageAsImage() に渡し、画像化してもらう。
  *
  * 重要な技術的制約（docs/architecture.md参照）:
  * Slides API `Presentations.Pages.getThumbnail` はページを画像化する公式手段だが、

@@ -21,17 +21,80 @@ Canvaで手作業作成している賃貸マイソクを、GAS起点で自動生
     （出力テンプレートではなく入力データ源。紛らわしいがITANDIマイソクとは別物）
   - `入退去管理`: 入居可能日の算出に使用
   - `駐車場価格設定`: 建物別の駐車場料金マスタ
-- **既存GAS**（`gas/src/RentalDataLookup.ts` に移植済み）の
-  `processNewRentals()` / `updateSlideWithData()` / `getBuildingInfo()` /
-  `formatCurrency()` をそのまま再利用する。これらは建物ごとの固定値・料金計算
-  ロジックを含む本番運用中のコードであり、値や条件分岐は一切変更していない。
-  `updateSlideWithData()` は、建物名・賃料・住所などの**文字情報をすべて
+- **既存GAS**の `processNewRentals()` / `updateSlideWithData()` /
+  `getBuildingInfo()` / `formatCurrency()` をそのまま再利用する。これらは建物ごとの
+  固定値・料金計算ロジックを含む本番運用中のコードであり、値や条件分岐は一切
+  変更しない。`updateSlideWithData()` は、建物名・賃料・住所などの**文字情報をすべて
   Slides側に`replaceAllText()`で焼き込んでから**スライドを完成させる
   （これは新設計の重要な前提であり、下記「Google Slides背景生成」節を参照）。
 - 自社向け（`is_own=true`）と一般/仲介向け（`is_own=false`）で、Slidesファイルが
   2種類切り替わる（`1QB2132Hz0XMREBKmxddQTp-9S34dijgy2oUeBODyVtM` /
   `1rr3v0UMjSqMDJPjAvBveoqnj7r210nllVgyTxO22jOc`）。これがそのまま
   `template_type: in_house / general` に対応する。
+
+## 既存Apps Scriptプロジェクトとの共存について（重要）
+
+実際のApps Scriptプロジェクト（スクリプトID: `1Ro2f7wv5cDPHDOq6USghMcURL1iq64q1Ay6QJSyI4yKb7wWctRVOqAuf`、
+要確認: 正確性は運用担当者側で必ず再確認すること）には、`processNewRentals()`等を含む
+`コード.js`のほかに、以下の本番運用中ファイルが存在することが判明した（2026-08時点で確認）。
+
+| ファイル | 内容 |
+|---|---|
+| `コード.js` | マイソク関連関数に加え、物件データ・駐車場データのWordPress/DB同期用SQL生成、PDF出力、チェックボックスリセット等、マイソクと無関係な多数の関数を含む |
+| `const.js` | リマインドメール用の設定・宛先・文面テンプレート |
+| `reminder.js` | 退去予定日の3営業日前に担当者へメール通知するバッチ処理（時間主導型トリガーで毎日実行） |
+| `updateSParking.js` | 別のSlides（駐車場空き状況掲示用、ID: `1qCo4xoKpgEeOWPP5sxkLWLw53dEp5zAEkHbAOblPsaw`）を更新する処理 |
+| `autoUpdateHP.js` | 物件・駐車場データを外部WordPressサイトへAPI経由で同期する処理（**APIキーを含む**） |
+
+**このリポジトリの`gas/src/`には、上記の既存ファイルを一切含めない。** 理由:
+1. `autoUpdateHP.js`に本番のAPIキーが直書きされており、Gitリポジトリにコミットすると
+   意図せず外部（GitHub等）へ漏えいするリスクがある
+2. リマインドメール・DB同期など、このシステムと無関係な本番機能を万が一
+   間違って上書き・削除してしまうリスクを避けるため
+3. `clasp push`は、ローカルのプロジェクトフォルダの中身で**リモートのファイル一覧を
+   まるごと置き換える**ため、ローカルに無いファイルはリモートからも消える
+
+そのため運用フローは以下のようになる（`docs/verification_beginner.md`にも
+同様の手順を記載）:
+
+1. `clasp clone <scriptId>` で既存プロジェクトを一旦別フォルダにバックアップする
+2. バックアップした`コード.js`・`const.js`・`reminder.js`・`updateSParking.js`・
+   `autoUpdateHP.js`を、このリポジトリの`gas/src/`へコピーする
+   （`.gitignore`で除外設定済みなので誤ってコミットされない）
+3. `コード.js`にのみ、以下の最小限の変更を手作業で加える（他の関数・他のファイルは
+   一切変更しない）:
+   - `function processNewRentals(is_own = false) {` を
+     `function processNewRentals(is_own = false, batchId) {` に変更
+   - 関数末尾付近の `updateSlideWithData(rowData, is_own);` を
+     `updateSlideWithData(rowData, is_own, batchId);` に変更
+   - `function updateSlideWithData(rowData, is_own) {` を
+     `function updateSlideWithData(rowData, is_own, batchId) {` に変更
+   - `updateSlideWithData()`内の`replaceAllText`ループの直後（関数の一番最後、
+     閉じ括弧の直前）に以下を追加:
+     ```js
+     // ここから新規追加: 画像化してDriveへ保存し、ジョブ管理シートへ1行追記する。
+     if (!batchId) return;
+
+     const driveFileId = exportSlidePageAsImage(presentation.getId(), newSlide.getObjectId());
+     const templateType = is_own ? "in_house" : "general";
+     appendSingleJobRow({
+       batchId: batchId,
+       rowId: batchId + "-" + templateType + "-" + rowData.buildingName + "-" + rowData.roomNumber,
+       buildingName: rowData.buildingName,
+       roomName: String(rowData.roomNumber),
+       templateType: templateType,
+       backgroundRef: driveFileId,
+     });
+     ```
+   - `processNewRentalsForOwn()`はそのまま変更不要（`batchId`未指定＝`undefined`で
+     呼ばれるため、`updateSlideWithData`側の`if (!batchId) return;`によりジョブ管理への
+     書き込みは行われず、従来どおりスライド作成のみで終わる＝後方互換）
+4. `.clasp.json`の`scriptId`を実際のIDに設定し、`clasp push`する
+
+この手順により、`exportSlidePageAsImage()`・`appendSingleJobRow()`（このリポジトリの
+`SlidesBackgroundGenerator.ts`・`SheetsRepository.ts`で定義）が、コピーした`コード.js`
+から呼び出せるようになる（Apps Scriptは同一プロジェクト内の全ファイルがひとつの
+グローバルスコープを共有するため、ファイルを分けても関数はどこからでも呼べる）。
 
 ## 全体フロー
 

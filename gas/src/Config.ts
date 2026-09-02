@@ -6,7 +6,11 @@
  */
 
 // 実スプレッドシートの既存タブをそのまま利用する（新規タブは作らない）。
-// 「新規募集家賃管理」のJ列チェックボックスが選択トリガー（RentalDataLookup.ts参照）。
+// 「新規募集家賃管理」のJ列チェックボックスが選択トリガー。
+// 選択判定・文字埋め込みロジックは実プロジェクトの既存ファイル コード.js の
+// processNewRentals()/updateSlideWithData() が担当する。このファイルは本番運用中の
+// 他機能（DB同期・PDF出力等）や機密情報を含むためこのリポジトリには含めず、
+// clasp push時にローカルのgas/src/へ手動配置する運用（docs/architecture.md参照）。
 const SHEET_NAMES = {
   RENTAL_MANAGEMENT: "新規募集家賃管理",
   ITANDI: "ITANDI",

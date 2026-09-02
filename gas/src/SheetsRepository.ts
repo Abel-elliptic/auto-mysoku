@@ -52,8 +52,9 @@ function appendJobRows(rows: JobRowInput[]): void {
 }
 
 /**
- * 1件だけジョブ行を追記する。RentalDataLookup.ts の updateSlideWithData() が
- * 部屋1件・テンプレート1種類ぶんの処理を終えるたびに呼び出す想定
+ * 1件だけジョブ行を追記する。コード.js（実プロジェクトの既存ファイル）の
+ * updateSlideWithData() が部屋1件・テンプレート1種類ぶんの処理を終えるたびに
+ * 呼び出す想定
  * （既存のバッチ処理ループの中から1行ずつ呼ばれるため、複数行をまとめて
  * 渡す appendJobRows() ではなく単発の関数を用意している）。
  */

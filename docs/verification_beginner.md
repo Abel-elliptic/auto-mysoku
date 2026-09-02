@@ -196,46 +196,107 @@ npx tsc --noEmit
 
 ### GASをスプレッドシートに紐付ける
 
+> **重要**: このスプレッドシートに紐付いているApps Scriptプロジェクトには、
+> このマイソクシステムと無関係な本番機能（退去リマインドメール・駐車場空き状況更新・
+> 外部サイトへのデータ同期）がすでに入っています。うっかり消してしまわないよう、
+> 必ずバックアップを取ってから作業します。
+
 1. このスプレッドシートを開いた状態で、メニューの
    「拡張機能」→「Apps Script」を選びます（新しいタブでエディタが開きます）。
-2. 開いたページのURLの中に `scriptId=...` に似た文字列（英数字の長い羅列）があります。
-   これがこのプロジェクトの「スクリプトID」です。あとで使うのでメモしておきます
-   （URL全体ではなく、`/d/` と `/edit` の間にある部分がスクリプトIDです）。
-3. ターミナルに戻り、以下を実行して `clasp` というツールをログインさせます
+2. 左側の歯車アイコン（プロジェクトの設定）→「スクリプト ID」をコピーします。
+3. ターミナルに戻り、`clasp` をどこからでも使えるようにしてログインします
    （ブラウザが開いてGoogleアカウントでのログインを求められるので、
    スプレッドシートと同じGoogleアカウントでログインしてください）。
 
    ```bash
-   cd gas
-   npx clasp login
+   npm install -g @google/clasp
+   clasp login
    ```
 
-4. `gas` フォルダにある `.clasp.json.example` というファイルをコピーして
+4. 今の中身をバックアップします（`auto-mysoku`フォルダの外に別フォルダを作ります）。
+
+   ```bash
+   cd ..
+   mkdir gas-backup
+   cd gas-backup
+   clasp clone <手順2でコピーしたスクリプトID>
+   ```
+
+   `appsscript.json`・`コード.js`など、今のプロジェクトの中身がダウンロードされます。
+
+5. バックアップしたファイルのうち、`コード.js`・`const.js`・`reminder.js`・
+   `updateSParking.js`・`autoUpdateHP.js` を、`auto-mysoku/gas/src/` フォルダへ
+   **コピー**します（`type`コマンドで中身を表示・貼り付けたりせず、ファイルごと
+   コピーしてください。日本語の文字が壊れるのを防ぐためです）。
+
+   ```bash
+   copy コード.js ..\auto-mysoku\gas\src\
+   copy const.js ..\auto-mysoku\gas\src\
+   copy reminder.js ..\auto-mysoku\gas\src\
+   copy updateSParking.js ..\auto-mysoku\gas\src\
+   copy autoUpdateHP.js ..\auto-mysoku\gas\src\
+   cd ..\auto-mysoku\gas
+   ```
+
+6. `src\コード.js` をテキストエディタ（メモ帳やVS Codeなど）で開き、以下の4箇所だけを
+   書き換えます（他の部分は一切変更しないでください）。詳細な差分は
+   [`../../docs/architecture.md`](../architecture.md)「既存Apps Scriptプロジェクトとの
+   共存について」にも載っています。
+
+   - `function processNewRentals(is_own = false) {` →
+     `function processNewRentals(is_own = false, batchId) {`
+   - `updateSlideWithData(rowData, is_own);` →
+     `updateSlideWithData(rowData, is_own, batchId);`
+   - `function updateSlideWithData(rowData, is_own) {` →
+     `function updateSlideWithData(rowData, is_own, batchId) {`
+   - `updateSlideWithData`関数の一番最後（`replaceAllText`のループが終わった直後、
+     関数を閉じる`}`の直前）に、以下を追加します。
+
+     ```js
+     // ここから新規追加: 画像化してDriveへ保存し、ジョブ管理シートへ1行追記する。
+     if (!batchId) return;
+
+     const driveFileId = exportSlidePageAsImage(presentation.getId(), newSlide.getObjectId());
+     const templateType = is_own ? "in_house" : "general";
+     appendSingleJobRow({
+       batchId: batchId,
+       rowId: batchId + "-" + templateType + "-" + rowData.buildingName + "-" + rowData.roomNumber,
+       buildingName: rowData.buildingName,
+       roomName: String(rowData.roomNumber),
+       templateType: templateType,
+       backgroundRef: driveFileId,
+     });
+     ```
+
+7. `gas` フォルダにある `.clasp.json.example` というファイルをコピーして
    `.clasp.json` という名前のファイルを作り、中の `scriptId` の値を、
-   手順2でメモしたスクリプトIDに書き換えます。
+   手順2でコピーしたスクリプトIDに書き換えます。
 
    ```bash
    cp .clasp.json.example .clasp.json
    ```
    （その後、`.clasp.json` をテキストエディタで開いて `scriptId` の値を書き換えてください）
 
-5. 以下を実行して、プログラムをスプレッドシートへ送り込みます。
+8. 以下を実行して、プログラムをスプレッドシートへ送り込みます。
 
    ```bash
-   npx clasp push
+   clasp push
    ```
 
-   `Pushed X files.` のように表示されれば成功です。
+   ファイル数の確認を聞かれたら、`コード.js`等の既存ファイルも含めて全部
+   送られることを確認してから進めてください。`Pushed X files.` のように
+   表示されれば成功です。
 
-6. スプレッドシートに戻り、一度タブを閉じて開き直してください
+9. スプレッドシートに戻り、一度タブを閉じて開き直してください
    （またはページを再読み込みしてください）。上部メニューに
-   「マイソク」という新しいメニューが増えていれば成功です。
+   「マイソク」という新しいメニューが増えていれば成功です
+   （リマインドメール等、他のメニューが元々あった場合はそれも残っているはずです）。
 
-7. メニューの「拡張機能」→「Apps Script」→左側の「プロジェクトの設定」→
-   「スクリプト プロパティ」から、`BACKGROUND_DRIVE_FOLDER_ID` という名前で、
-   マイソクの背景画像を一時的に保存するGoogleドライブのフォルダIDを設定します
-   （Googleドライブでフォルダを作り、そのフォルダを開いたときのURLに含まれる
-   長い英数字の文字列がフォルダIDです）。
+10. メニューの「拡張機能」→「Apps Script」→左側の「プロジェクトの設定」→
+    「スクリプト プロパティ」から、`BACKGROUND_DRIVE_FOLDER_ID` という名前で、
+    マイソクの背景画像を一時的に保存するGoogleドライブのフォルダIDを設定します
+    （Googleドライブでフォルダを作り、そのフォルダを開いたときのURLに含まれる
+    長い英数字の文字列がフォルダIDです）。
 
 > **うまくいかない時は**: 「マイソク」メニューが出てこない場合は、
 > ページの再読み込みを試してください。GASのメニューは、スプレッドシートを

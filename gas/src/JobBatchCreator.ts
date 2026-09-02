@@ -3,8 +3,11 @@
  *
  * 「新規募集家賃管理」タブのJ列チェックボックスで選択された部屋について、
  * 自社(in_house)・一般(general)の両テンプレートを同一batch_idで生成する
- * （RentalDataLookup.ts の processNewRentals() を再利用。選択判定・建物別の
- * 固定値計算・文字埋め込みロジックは既存の本番運用中コードをそのまま使う）。
+ * （実プロジェクトの既存ファイル コード.js の processNewRentals() を呼び出す。
+ * 選択判定・建物別の固定値計算・文字埋め込みロジックは既存の本番運用中コードを
+ * そのまま使う。processNewRentals()/updateSlideWithData()にbatchId引数を追加し、
+ * ジョブ行追記フックを組み込む変更が別途 コード.js 側に必要 — このファイルはこの
+ * リポジトリに含まれないため、変更手順は docs/architecture.md に記載する）。
  *
  * 「ITANDIマイソク」相当のテンプレートはまだSlidesファイルが存在しないため、
  * 今回のバッチには含めない（TEMPLATE_TYPES = ["in_house", "general"]）。

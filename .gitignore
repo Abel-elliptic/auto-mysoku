@@ -20,6 +20,17 @@ build/
 node_modules/
 .clasp.json
 
+# 実際のApps Scriptプロジェクトに元々あった既存ファイル群（reminder.js等）。
+# これらは本番運用中のコード・機密情報（APIキー等）を含むため、このリポジトリでは
+# 一切追跡しない。clasp push時のみ、ローカルのgas/src/へ手動でコピーして使う。
+# 詳細は docs/architecture.md「既存Apps Scriptプロジェクトとの共存について」参照。
+gas/src/コード.js
+gas/src/const.js
+gas/src/reminder.js
+gas/src/updateSParking.js
+gas/src/autoUpdateHP.js
+gas-backup/
+
 # Logs
 *.log
 logs/
