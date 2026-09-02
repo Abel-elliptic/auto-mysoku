@@ -1,0 +1,7 @@
+**/node_modules/**
+**/.git/**
+package.json
+package-lock.json
+tsconfig.json
+.clasp.json.example
+**/*.d.ts
