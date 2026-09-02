@@ -1,7 +1,9 @@
+**/**
+!appsscript.json
+!**/*.gs
+!**/*.js
+!**/*.ts
+!**/*.html
+**/*.d.ts
 **/node_modules/**
 **/.git/**
-package.json
-package-lock.json
-tsconfig.json
-.clasp.json.example
-**/*.d.ts
