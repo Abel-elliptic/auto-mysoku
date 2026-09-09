@@ -82,14 +82,14 @@ docs/architecture.md「既存Apps Scriptプロジェクトとの共存につい�
 | B | row_id | `{batch_id}-{template_type}-{建物名}-{部屋番号}` |
 | C | building_name | |
 | D | room_name | |
-| E | template_type | `in_house` \| `general`（`itandi`は将来追加予定・現状未使用） |
+| E | template_type | `in_house` \| `general` \| `in_house_guarantee`（`itandi`は将来追加予定・現状未使用） |
 | F | status | `WAITING` \| `PROCESSING` \| `COMPLETED` \| `ERROR` |
 | G | created_at | ISO8601、GASがジョブ行追記時に設定 |
 | H | claimed_at | PCがクレーム時に設定 |
 | I | completed_at | 終了時（COMPLETED/ERROR）に設定 |
 | J | error_message | サニタイズ済みの定型文のみ。内部パス・認証情報を含めない |
-| K | output_a3_ref | 完了後のNAS相対パス |
-| L | output_a4_ref | 同上（A4） |
+| K | output_a3_ref | 完了後のNAS出力先の相対パス（列名は歴史的経緯でA3のままだが、現状はA3のみ生成するため実質「NAS出力パス」列） |
+| L | output_a4_ref | 一般・自社保証会社マイソクのみ、Drive完成品フォルダへアップロードした際のDriveファイルID（自社用は空欄。列名は歴史的経緯） |
 | M | attempt_count | TransientErrorによる再試行回数 |
 | N | worker_id | クレームしたPCプロセスの識別子（hostname:pid） |
 | O | background_ref | Slidesエクスポート背景画像（文字情報焼き込み済み）のDriveファイルID |

@@ -4,13 +4,17 @@
 1. テンプレート設定をロード
 2. ジョブ行の値（building_name/room_name等）をroom_dataとして使う
    （実運用テンプレートはtext_fieldsを持たないため、文字情報の取得は
-   本質的には不要。NASパス組み立てにbuilding_name/room_nameのみ使う）
+   本質的には不要。ファイル名・NASパス組み立てにbuilding_name/room_nameを使う）
 3. 背景画像をDriveから取得（GAS側で文字を焼き込み済みのSlidesエクスポート画像）
 4. NASから必要画像を取得。取得できたものだけ RoomImages に積む
 5. 必須画像の欠損チェック → 欠損があればジョブ全体をPermanentErrorにする
-6. 合成 → A3画像、そこからA4画像を生成
-7. NASの出力先へ書き込み（`{date}_A3.jpg` / `{date}_A4.jpg`）
-8. 完了報告
+6. 合成 → A3サイズの完成品画像を生成（A4は作らない）
+7. NASの出力先へ書き込み: {nas_output_root}/{building_name}/{room_name}/マイソク/
+   {yyyymmdd}_{ファイル名}.jpg
+8. 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、さらに指定Drive
+   フォルダへも {ファイル名}.jpg（日付なし）でアップロードする
+   （自社用(in_house)はNASのみ）
+9. 完了報告
 """
 
 from __future__ import annotations
@@ -18,7 +22,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 
-from autohp.compositor import RoomImages, check_required_images, composite_flyer, downscale_a3_to_a4
+from autohp.compositor import RoomImages, check_required_images, composite_flyer
 from autohp.config import Settings
 from autohp.drive_client import DriveClient
 from autohp.errors import MissingRequiredImageError, PermanentError
@@ -29,14 +33,19 @@ from autohp.template_config import TemplateConfig, load_template_config_by_type
 
 logger = logging.getLogger("autohp.job_processor")
 
-# テンプレート種別ごとの、NAS共有直下の出力フォルダ名（仕様書のNASディレクトリ構造どおり、
-# マイソク/自社マイソク/ITANDIマイソクは共有直下に並ぶ兄弟フォルダであり、共通の親フォルダの
-# 下にネストしない。したがってこの値自体がsafe_join()に渡す許可ルートになる）。
-OUTPUT_SUBTREE = {
-    "in_house": "自社マイソク",
-    "itandi": "ITANDIマイソク",
-    "general": "マイソク",
+# テンプレート種別ごとの完成品ファイル名の接頭辞。
+FILENAME_PREFIX = {
+    "in_house": "自社用マイソク_",
+    "general": "マイソク_",
+    "in_house_guarantee": "自社保証会社_マイソク_",
 }
+
+# このテンプレート種別の完成品のみ、NASに加えてDriveへもアップロードする。
+DRIVE_UPLOAD_TEMPLATE_TYPES = {"general", "in_house_guarantee"}
+
+# NAS出力先で、建物名/部屋番号の下に置く固定のサブフォルダ名
+# （テンプレート種別を問わず同じフォルダに、ファイル名の接頭辞で区別して並べる）。
+NAS_OUTPUT_SUBFOLDER = "マイソク"
 
 
 def process(
@@ -76,18 +85,31 @@ def process(
         "RGB", template.canvas_size_px(), "white"
     )
 
-    a3_image = composite_flyer(template, room_data, background_img, images)
-    a4_image = downscale_a3_to_a4(a3_image)
+    flyer_image = composite_flyer(template, room_data, background_img, images)
+    flyer_bytes = _jpeg_bytes(flyer_image)
+
+    prefix = FILENAME_PREFIX.get(job.template_type)
+    if prefix is None:
+        raise PermanentError(
+            "未対応のテンプレート種別です。",
+            detail=f"no FILENAME_PREFIX for template_type={job.template_type!r}",
+        )
+    filename = f"{prefix}{building_name}{room_name}.jpg"
 
     today = datetime.now(UTC).date().isoformat().replace("-", "")
-    output_root = OUTPUT_SUBTREE.get(job.template_type, job.template_type)
-    a3_path = safe_join(output_root, building_name, room_name, f"{today}_A3.jpg")
-    a4_path = safe_join(output_root, building_name, room_name, f"{today}_A4.jpg")
+    nas_path = safe_join(
+        settings.nas_output_root, building_name, room_name, NAS_OUTPUT_SUBFOLDER, f"{today}_{filename}"
+    )
+    smb.write_file(nas_path, flyer_bytes)
 
-    smb.write_file(a3_path, _jpeg_bytes(a3_image))
-    smb.write_file(a4_path, _jpeg_bytes(a4_image))
+    drive_file_id = ""
+    if job.template_type in DRIVE_UPLOAD_TEMPLATE_TYPES:
+        drive_file_id = drive.upload_file(settings.finished_drive_folder_id, filename, flyer_bytes)
 
-    sheets.report_completed(job, a3_path.as_posix(), a4_path.as_posix())
+    # JOB_COLUMNSのoutput_a3_ref/output_a4_ref列を、NAS出力パス/Drive完成品ファイルIDの
+    # 記録用に転用している（A3/A4の2サイズ出力をやめたため列名の意味は変わったが、
+    # 列自体の追加・GAS側との同期を避けるため既存の2列をそのまま使う）。
+    sheets.report_completed(job, nas_path.as_posix(), drive_file_id)
     logger.info("job_completed", extra={"job_row_id": job.row_id, "stage": "completed"})
 
 

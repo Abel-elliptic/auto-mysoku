@@ -29,10 +29,20 @@ class Settings(BaseSettings):
     nas_source_root: str = Field(
         default="募集用", description="部屋写真の格納ルート（共有内相対パス）"
     )
-    # 生成済みマイソクの出力先は、共有直下に「マイソク」「自社マイソク」「ITANDIマイソク」の
-    # 3つが兄弟フォルダとして並ぶ構成（仕様書のNASディレクトリ構造参照）。
-    # 全テンプレート種別で共通の親フォルダは存在しないため、単一のnas_output_rootは持たない
-    # （job_processor.OUTPUT_SUBTREEがテンプレート種別ごとの実際の共有直下フォルダ名を持つ）。
+    # 生成済みマイソク（完成品）の出力先は {nas_output_root}/{建物名}/{部屋番号}/マイソク/
+    # の下に、テンプレート種別を問わず同じ「マイソク」フォルダへ、ファイル名の接頭辞
+    # （マイソク_/自社保証会社_マイソク_/自社用マイソク_）で区別して並べる。
+    # nas_output_root自体は共有内の相対パス（共有直下でよければ空文字のままでよい）。
+    nas_output_root: str = Field(
+        default="", description="完成品マイソクの出力先ルート（共有内相対パス、共有直下なら空文字）"
+    )
+
+    # --- Drive（完成品の一部をアップロードする先） ---
+    # 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、このDriveフォルダへも
+    # アップロードする（自社用(in_house)はNASのみ、Driveへは上げない）。
+    finished_drive_folder_id: str = Field(
+        ..., description="完成品マイソク（一般・自社保証会社のみ）のアップロード先DriveフォルダID"
+    )
 
     # --- ジョブ処理 ---
     poll_interval_seconds: int = Field(

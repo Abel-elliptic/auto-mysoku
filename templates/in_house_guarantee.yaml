@@ -1,0 +1,38 @@
+# 自社保証会社マイソク（in_house_guarantee）テンプレート設定
+#
+# 一般マイソク（general）と同じSlidesファイル・同じ画像配置を使う。
+# 違いは保証会社・火災保険・備考の一部の文言のみで、これはすべて既存GAS
+# （コード.js の updateSlideWithData()）がSlides側にreplaceAllTextで
+# 焼き込んでからエクスポートするため、この設定ファイル（画像配置）は
+# general.yaml と同一内容になる。
+#
+# 座標系はすべてA3基準キャンバス（page_size @ dpi から算出されるpx）。
+#
+# 写真配置座標（image_slots）は未確定。実際のSlidesファイル
+# （1rr3v0UMjSqMDJPjAvBveoqnj7r210nllVgyTxO22jOc、generalと共用）に
+# 仮の画像を配置し、「レイアウト情報取得」メニュー（LayoutCaptureTool.ts）で
+# EMU単位の座標を取得、px（このYAMLのdpi基準）へ変換した上でimage_slotsへ
+# 追記すること。座標が確定するまでは背景（Slidesエクスポート画像）のみの状態とする。
+
+template_type: in_house_guarantee
+display_name: "自社保証会社マイソク"
+slides_template_file_id: "1rr3v0UMjSqMDJPjAvBveoqnj7r210nllVgyTxO22jOc"
+
+page_size:
+  width_mm: 420
+  height_mm: 297
+dpi: 300
+
+required_images: []
+optional_images: []
+
+image_slots:
+  - key: background
+    source: slides_export
+    x_px: 0
+    y_px: 0
+    width_px: 4961
+    height_px: 3508
+    fit: stretch
+
+text_fields: []
