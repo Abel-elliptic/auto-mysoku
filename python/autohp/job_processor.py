@@ -49,6 +49,12 @@ DRIVE_UPLOAD_TEMPLATE_TYPES = {"general", "in_house_guarantee"}
 # （テンプレート種別を問わず同じフォルダに、ファイル名の接頭辞で区別して並べる）。
 NAS_OUTPUT_SUBFOLDER = "マイソク"
 
+# 部屋の写真（間取り・外観・キッチン等）は部屋によって拡張子がjpg/pngなど
+# バラバラなため、ImageSlot.source_filenameに拡張子を含めない場合はこの順で
+# 試す（見つかった最初のものを使う）。既に拡張子を含む値（"." を含む）を
+# 指定した場合はそのまま1回だけ試し、このリストは使わない。
+CANDIDATE_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
+
 
 def process(
     job: JobRow,
@@ -139,19 +145,26 @@ def _fetch_room_images(
     for slot in template.image_slots:
         if slot.source != "nas" or not slot.source_filename:
             continue
-        try:
-            path = safe_join(source_root, building_name, room_name, slot.source_filename)
-        except PermanentError:
-            # サニタイズ失敗＝不正な建物名/部屋番号。そのスロットは欠損扱いとし、
-            # 必須スロットであれば check_required_images() 側でERRORになる。
-            logger.warning(
-                "image_path_rejected", extra={"job_row_id": "", "stage": "fetch_images"}
-            )
-            continue
-        try:
-            result[slot.key] = smb.read_file(path)
-        except FileNotFoundError:
-            continue
+        candidates = (
+            [slot.source_filename]
+            if "." in slot.source_filename
+            else [f"{slot.source_filename}{ext}" for ext in CANDIDATE_IMAGE_EXTENSIONS]
+        )
+        for filename in candidates:
+            try:
+                path = safe_join(source_root, building_name, room_name, filename)
+            except PermanentError:
+                # サニタイズ失敗＝不正な建物名/部屋番号。そのスロットは欠損扱いとし、
+                # 必須スロットであれば check_required_images() 側でERRORになる。
+                logger.warning(
+                    "image_path_rejected", extra={"job_row_id": "", "stage": "fetch_images"}
+                )
+                break
+            try:
+                result[slot.key] = smb.read_file(path)
+                break
+            except FileNotFoundError:
+                continue
     return result
 
 
