@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     smb_username: str = Field(..., description="NAS専用・最小権限アカウントのユーザー名")
     smb_password: str = Field(..., description="上記アカウントのパスワード。可能ならOS資格情報ストア経由で注入する")
     nas_source_root: str = Field(
-        default="募集用", description="部屋写真の格納ルート（共有内相対パス）"
+        default="営業画像", description="部屋写真の格納ルート（共有内相対パス）"
     )
     # 生成済みマイソク（完成品）の出力先は {nas_output_root}/{建物名}/{部屋番号}/マイソク/
     # の下に、テンプレート種別を問わず同じ「マイソク」フォルダへ、ファイル名の接頭辞
