@@ -12,6 +12,7 @@ smbclient 高水準APIが使えない特殊な認証要件があれば要調整�
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Self
 
 from smbprotocol.connection import Connection
@@ -36,7 +37,7 @@ class SmbClient:
     def connect(self) -> None:
         s = self._settings
         try:
-            self._connection = Connection(client_guid_bytes=None, server_name=s.smb_host, port=445)
+            self._connection = Connection(uuid.uuid4(), s.smb_host, port=445)
             self._connection.connect()
             self._session = Session(self._connection, s.smb_username, s.smb_password)
             self._session.connect()
