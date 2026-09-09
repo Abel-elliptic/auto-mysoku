@@ -15,6 +15,9 @@ from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 FitMode = Literal["cover", "contain", "stretch"]
 ImageSource = Literal["nas", "slides_export"]
+# "room": {source_root}/{building}/{room}/{filename}（部屋ごとの写真、既定）
+# "building": {source_root}/{building}/{filename}（外観等、建物単位で1枚しかない写真）
+ImageSourceScope = Literal["room", "building"]
 
 
 class PageSize(BaseModel):
@@ -25,8 +28,11 @@ class PageSize(BaseModel):
 class ImageSlot(BaseModel):
     key: str
     source: ImageSource = "nas"
-    # source="nas" の場合、NAS上の 募集用/{building}/{room}/{source_filename} を読む。
+    # source="nas" の場合、NAS上の {building}/{room}/{source_filename}
+    # （source_scope="building"なら {building}/{source_filename}）を読む。
     source_filename: str | None = None
+    # 外観のように部屋ごとではなく建物に1枚しかない写真は "building" を指定する。
+    source_scope: ImageSourceScope = "room"
     x_px: int
     y_px: int
     # width_px/height_pxが0や負の値だと compositor._fit_image() がゼロ除算で

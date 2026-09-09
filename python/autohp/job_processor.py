@@ -150,9 +150,12 @@ def _fetch_room_images(
             if "." in slot.source_filename
             else [f"{slot.source_filename}{ext}" for ext in CANDIDATE_IMAGE_EXTENSIONS]
         )
+        path_segments = (
+            (building_name,) if slot.source_scope == "building" else (building_name, room_name)
+        )
         for filename in candidates:
             try:
-                path = safe_join(source_root, building_name, room_name, filename)
+                path = safe_join(source_root, *path_segments, filename)
             except PermanentError:
                 # サニタイズ失敗＝不正な建物名/部屋番号。そのスロットは欠損扱いとし、
                 # 必須スロットであれば check_required_images() 側でERRORになる。
