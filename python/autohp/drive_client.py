@@ -14,16 +14,14 @@ import logging
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
+from googleapiclient.http import MediaIoBaseDownload
 
 from autohp.config import Settings
 from autohp.errors import TransientError
 
 logger = logging.getLogger("autohp.drive")
 
-# 完成品（一般・自社保証会社マイソク）のDriveアップロードも行うため、
-# 読み取り専用スコープでは足りない。
-SCOPES = ["https://www.googleapis.com/auth/drive"]
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class DriveClient:
@@ -45,24 +43,4 @@ class DriveClient:
         except HttpError as exc:
             raise TransientError(
                 "背景画像の取得に失敗しました。", detail=f"Drive download failed for {file_id}: {exc}"
-            ) from exc
-
-    def upload_file(self, folder_id: str, filename: str, data: bytes, mime_type: str = "image/jpeg") -> str:
-        """完成品マイソクを指定フォルダへアップロードし、作成したファイルIDを返す。"""
-        try:
-            media = MediaIoBaseUpload(io.BytesIO(data), mimetype=mime_type, resumable=False)
-            created = (
-                self._service.files()
-                .create(
-                    body={"name": filename, "parents": [folder_id]},
-                    media_body=media,
-                    fields="id",
-                )
-                .execute()
-            )
-            return created["id"]
-        except HttpError as exc:
-            raise TransientError(
-                "完成品のDriveアップロードに失敗しました。",
-                detail=f"Drive upload failed for {filename} to folder {folder_id}: {exc}",
             ) from exc

@@ -11,9 +11,10 @@
 6. 合成 → A3サイズの完成品画像を生成（A4は作らない）
 7. NASの出力先へ書き込み: {nas_output_root}/{building_name}/{room_name}/マイソク/
    {yyyymmdd}_{ファイル名}.jpg
-8. 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、さらに指定Drive
-   フォルダへも {ファイル名}.jpg（日付なし）でアップロードする
-   （自社用(in_house)はNASのみ）
+8. 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、さらに
+   settings.finished_drive_dir（社内PCでGoogle Drive for Desktop等により
+   同期されているローカルフォルダ）へも {ファイル名}.jpg（日付なし）で保存する
+   （自社用(in_house)はNASのみ。Drive APIは使わずローカルファイル書き込みで済ませる）
 9. 完了報告
 """
 
@@ -21,12 +22,13 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from pathlib import Path
 
 from autohp.compositor import RoomImages, check_required_images, composite_flyer
 from autohp.config import Settings
 from autohp.drive_client import DriveClient
 from autohp.errors import MissingRequiredImageError, PermanentError
-from autohp.path_safety import safe_join
+from autohp.path_safety import safe_join, sanitize_segment
 from autohp.sheets_client import JobRow, SheetsClient
 from autohp.smb_client import SmbClient
 from autohp.template_config import TemplateConfig, load_template_config_by_type
@@ -94,7 +96,11 @@ def process(
             "未対応のテンプレート種別です。",
             detail=f"no FILENAME_PREFIX for template_type={job.template_type!r}",
         )
-    filename = f"{prefix}{building_name}{room_name}.jpg"
+    # building_name/room_nameはスプレッドシート由来のためファイル名へ使う前に検証する
+    # （safe_join()と同じホワイトリストチェック。パス区切り文字等は通らない）。
+    safe_building_name = sanitize_segment(building_name)
+    safe_room_name = sanitize_segment(room_name)
+    filename = f"{prefix}{safe_building_name}{safe_room_name}.jpg"
 
     today = datetime.now(UTC).date().isoformat().replace("-", "")
     nas_path = safe_join(
@@ -102,14 +108,16 @@ def process(
     )
     smb.write_file(nas_path, flyer_bytes)
 
-    drive_file_id = ""
+    drive_ref = ""
     if job.template_type in DRIVE_UPLOAD_TEMPLATE_TYPES:
-        drive_file_id = drive.upload_file(settings.finished_drive_folder_id, filename, flyer_bytes)
+        drive_path = Path(settings.finished_drive_dir) / filename
+        drive_path.write_bytes(flyer_bytes)
+        drive_ref = str(drive_path)
 
-    # JOB_COLUMNSのoutput_a3_ref/output_a4_ref列を、NAS出力パス/Drive完成品ファイルIDの
-    # 記録用に転用している（A3/A4の2サイズ出力をやめたため列名の意味は変わったが、
+    # JOB_COLUMNSのoutput_a3_ref/output_a4_ref列を、NAS出力パス/Drive完成品の保存先
+    # パスの記録用に転用している（A3/A4の2サイズ出力をやめたため列名の意味は変わったが、
     # 列自体の追加・GAS側との同期を避けるため既存の2列をそのまま使う）。
-    sheets.report_completed(job, nas_path.as_posix(), drive_file_id)
+    sheets.report_completed(job, nas_path.as_posix(), drive_ref)
     logger.info("job_completed", extra={"job_row_id": job.row_id, "stage": "completed"})
 
 

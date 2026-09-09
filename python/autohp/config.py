@@ -37,11 +37,13 @@ class Settings(BaseSettings):
         default="", description="完成品マイソクの出力先ルート（共有内相対パス、共有直下なら空文字）"
     )
 
-    # --- Drive（完成品の一部をアップロードする先） ---
-    # 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、このDriveフォルダへも
-    # アップロードする（自社用(in_house)はNASのみ、Driveへは上げない）。
-    finished_drive_folder_id: str = Field(
-        ..., description="完成品マイソク（一般・自社保証会社のみ）のアップロード先DriveフォルダID"
+    # --- Drive（完成品の一部を保存する先） ---
+    # 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、ここにも保存する
+    # （自社用(in_house)はNASのみ）。Drive APIは使わず、社内PCにGoogle Drive for
+    # Desktop等で同期されているローカルフォルダへ直接ファイルを書き込む方式にしている
+    # （サービスアカウントへのフォルダ共有・OAuth設定が不要でシンプルなため）。
+    finished_drive_dir: str = Field(
+        ..., description="完成品マイソク（一般・自社保証会社のみ）の保存先ローカルパス（Drive同期フォルダ）"
     )
 
     # --- ジョブ処理 ---
