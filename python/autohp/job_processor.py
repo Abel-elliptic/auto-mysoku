@@ -71,11 +71,16 @@ def process(
 
     building_name = room_data.get("building_name", "")
     room_name = room_data.get("room_name", "")
+    # 戸建は建物=部屋が実質1つしかないため、外観写真も部屋番号フォルダの中に
+    # 入る（マンションのように建物直下に外観だけ置く運用ではない）。
+    is_detached_house = "戸建" in sheets.fetch_building_type(building_name)
 
     background_bytes = _fetch_background(job, drive)
 
     images = RoomImages(
-        by_key=_fetch_room_images(template, building_name, room_name, smb, settings.nas_source_root)
+        by_key=_fetch_room_images(
+            template, building_name, room_name, smb, settings.nas_source_root, is_detached_house
+        )
     )
 
     missing = check_required_images(template, set(images.by_key.keys()))
@@ -140,6 +145,7 @@ def _fetch_room_images(
     room_name: str,
     smb: SmbClient,
     source_root: str,
+    is_detached_house: bool,
 ) -> dict[str, bytes]:
     result: dict[str, bytes] = {}
     for slot in template.image_slots:
@@ -150,9 +156,10 @@ def _fetch_room_images(
             if "." in slot.source_filename
             else [f"{slot.source_filename}{ext}" for ext in CANDIDATE_IMAGE_EXTENSIONS]
         )
-        path_segments = (
-            (building_name,) if slot.source_scope == "building" else (building_name, room_name)
-        )
+        # 戸建は建物直下に外観だけ置く運用がそもそも成立しない（棟=部屋のため）ので、
+        # source_scope="building" のスロットでも部屋番号フォルダの中を見る。
+        use_building_scope = slot.source_scope == "building" and not is_detached_house
+        path_segments = (building_name,) if use_building_scope else (building_name, room_name)
         for filename in candidates:
             try:
                 path = safe_join(source_root, *path_segments, filename)

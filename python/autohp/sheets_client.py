@@ -27,6 +27,9 @@ logger = logging.getLogger("autohp.sheets")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 JOB_SHEET_NAME = "ジョブ管理"
+# 建物名(A列)→マンション/戸建て(C列)の対応表。コード.js getBuildingType()と
+# 同じシートを参照する（外観写真の格納場所が建物単位か部屋単位かの判定に使う）。
+BUILDING_LIST_SHEET_NAME = "建物一覧"
 
 # ジョブ管理シートの列順（A列から）。GAS側 Config.ts と一致させること。
 # building_id/room_idではなくbuilding_name/room_nameを使うのは、実データ
@@ -91,6 +94,26 @@ class SheetsClient:
 
     def _values(self) -> object:
         return self._service.spreadsheets().values()
+
+    def fetch_building_type(self, building_name: str) -> str:
+        """「建物一覧」シートのA列(建物名)を検索し、C列(マンション/戸建て)を返す。
+
+        見つからない場合は空文字を返す（戸建判定は文字列に"戸建"が含まれるかで
+        行うため、空文字は「戸建てではない＝マンション扱い」の安全側に倒れる）。
+        """
+        try:
+            resp = (
+                self._values()
+                .get(spreadsheetId=self._spreadsheet_id, range=f"{BUILDING_LIST_SHEET_NAME}!A2:C")
+                .execute()
+            )
+        except HttpError as exc:
+            raise TransientError("建物一覧の取得に失敗しました。", detail=str(exc)) from exc
+
+        for row in resp.get("values", []):
+            if row and row[0] == building_name:
+                return row[2] if len(row) > 2 else ""
+        return ""
 
     def fetch_waiting_or_stale_jobs(self, stale_before_iso: str) -> list[JobRow]:
         try:
