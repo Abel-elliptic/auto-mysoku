@@ -7,12 +7,24 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# .envはリポジトリ直下（このファイルから見て python/autohp/../.. ）に置く運用
+# （docs/verification_beginner.md 参照）。pydantic-settingsのenv_fileは
+# デフォルトでは「実行時のカレントディレクトリ」基準の相対パスになり、
+# `cd python && python -m autohp.job_poller` のように python/ 配下で実行すると
+# リポジトリ直下の.envを見つけられず、必須項目が未設定のまま起動時エラーになる。
+# それを避けるため、このファイルの場所を基準にした絶対パスを使う。
+_REPO_ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=_REPO_ROOT_ENV_FILE, env_file_encoding="utf-8", extra="ignore"
+    )
 
     # --- Google API ---
     google_service_account_json_path: str = Field(
