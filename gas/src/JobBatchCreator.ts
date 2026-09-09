@@ -2,15 +2,13 @@
  * 「マイソク作成」メニューのエントリーポイント。
  *
  * 「新規募集家賃管理」タブのJ列チェックボックスで選択された部屋について、
- * 自社(in_house)・一般(general)の両テンプレートを同一batch_idで生成する
- * （実プロジェクトの既存ファイル コード.js の processNewRentals() を呼び出す。
+ * 自社(in_house)・一般(general)・自社保証会社(in_house_guarantee)の3種類を
+ * 同一batch_idで生成する（コード.js の processNewRentals() を呼び出す。
  * 選択判定・建物別の固定値計算・文字埋め込みロジックは既存の本番運用中コードを
- * そのまま使う。processNewRentals()/updateSlideWithData()にbatchId引数を追加し、
- * ジョブ行追記フックを組み込む変更が別途 コード.js 側に必要 — このファイルはこの
- * リポジトリに含まれないため、変更手順は docs/architecture.md に記載する）。
+ * そのまま使う）。
  *
  * 「ITANDIマイソク」相当のテンプレートはまだSlidesファイルが存在しないため、
- * 今回のバッチには含めない（TEMPLATE_TYPES = ["in_house", "general"]）。
+ * 今回のバッチには含めない（TEMPLATE_TYPES = ["in_house", "general", "in_house_guarantee"]）。
  */
 
 function createFlyerBatch(): void {
@@ -21,11 +19,9 @@ function createFlyerBatch(): void {
 
   // processNewRentals()自体が「新規募集家賃管理」のJ列チェック行を読み取り、
   // 該当行ごとにupdateSlideWithData()（スライド複製・文字埋め込み・画像化・
-  // ジョブ行追記）まで行う。ここではテンプレート種別（is_own）ごとに1回ずつ
-  // 呼び出すだけでよい。
+  // ジョブ行追記）まで行う。ここではテンプレート種別ごとに1回ずつ呼び出すだけでよい。
   TEMPLATE_TYPES.forEach((templateType) => {
-    const isOwn = templateType === "in_house";
-    processNewRentals(isOwn, batchId);
+    processNewRentals(templateType, batchId);
   });
 
   ui.alert(`マイソク作成ジョブを登録しました。\nバッチID: ${batchId}`);

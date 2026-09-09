@@ -44,11 +44,13 @@ const JOB_COLUMNS = [
 ] as const;
 
 // 実際に運用中のSlidesテンプレートは「自社(in_house)」「一般(general)」の2種類のみ。
+// 「自社保証会社(in_house_guarantee)」は一般と同じSlidesファイルを使い、文言（保証会社・
+// 火災保険・備考の一部）だけが異なる（コード.js側の分岐で処理する）。
 // ITANDIマイソク相当のテンプレートはまだ存在しないため、型としては残しつつ
 // バッチ生成対象（TEMPLATE_TYPES）からは外す（将来Slidesファイルが用意され次第追加する）。
-type TemplateType = "in_house" | "itandi" | "general";
+type TemplateType = "in_house" | "itandi" | "general" | "in_house_guarantee";
 
-const TEMPLATE_TYPES: TemplateType[] = ["in_house", "general"];
+const TEMPLATE_TYPES: TemplateType[] = ["in_house", "general", "in_house_guarantee"];
 
 const SCRIPT_PROPERTY_KEYS = {
   BACKGROUND_DRIVE_FOLDER_ID: "BACKGROUND_DRIVE_FOLDER_ID",

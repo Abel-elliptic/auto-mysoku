@@ -8,4 +8,4 @@
  * 持たない（.d.tsは常にコンパイル対象外）。
  */
 
-declare function processNewRentals(is_own?: boolean, batchId?: string): void;
+declare function processNewRentals(templateType: TemplateType, batchId?: string): void;
