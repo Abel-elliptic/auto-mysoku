@@ -8,11 +8,8 @@
 #
 # 座標系はすべてA3基準キャンバス（page_size @ dpi から算出されるpx）。
 #
-# 写真配置座標（image_slots）は未確定。実際のSlidesファイル
-# （1rr3v0UMjSqMDJPjAvBveoqnj7r210nllVgyTxO22jOc、generalと共用）に
-# 仮の画像を配置し、「レイアウト情報取得」メニュー（LayoutCaptureTool.ts）で
-# EMU単位の座標を取得、px（このYAMLのdpi基準）へ変換した上でimage_slotsへ
-# 追記すること。座標が確定するまでは背景（Slidesエクスポート画像）のみの状態とする。
+# 写真配置座標（image_slots）は in_house.yaml/general.yaml と共通
+# （2026-09-09確定、ユーザー確認済み）。
 
 template_type: in_house_guarantee
 display_name: "自社保証会社マイソク"
@@ -23,7 +20,7 @@ page_size:
   height_mm: 297
 dpi: 300
 
-required_images: []
+required_images: ["間取り", "外観", "キッチン", "浴室", "画像1", "画像2"]
 optional_images: []
 
 image_slots:
@@ -34,5 +31,54 @@ image_slots:
     width_px: 4961
     height_px: 3508
     fit: stretch
+
+  - key: 間取り
+    source: nas
+    source_filename: 間取り
+    x_px: 219
+    y_px: 1315
+    width_px: 1423
+    height_px: 1529
+
+  - key: 外観
+    source: nas
+    source_filename: 外観
+    source_scope: building
+    x_px: 126
+    y_px: 628
+    width_px: 794
+    height_px: 675
+
+  - key: キッチン
+    source: nas
+    source_filename: キッチン
+    x_px: 942
+    y_px: 626
+    width_px: 821
+    height_px: 679
+
+  - key: 浴室
+    source: nas
+    source_filename: 浴室
+    x_px: 1785
+    y_px: 2088
+    width_px: 733
+    height_px: 757
+
+  - key: 画像1
+    source: nas
+    source_filename: 画像1
+    x_px: 1785
+    y_px: 624
+    width_px: 733
+    height_px: 684
+
+  - key: 画像2
+    source: nas
+    source_filename: 画像2
+    x_px: 1785
+    y_px: 1319
+    width_px: 733
+    height_px: 757
 
 text_fields: []

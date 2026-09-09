@@ -1,35 +1,27 @@
 # 自社マイソク（is_own=true）テンプレート設定
 #
 # 座標系はすべてA3基準キャンバス（page_size @ dpi から算出されるpx）。
-# A4は compositor.downscale_a3_to_a4() による縮小生成のみで作るため、
-# ここにA4用の座標は持たせない。
+# A4は生成しない（実運用は高解像度JPEG1枚のみ、要確認事項は解消済み）。
 #
-# 重要: 建物名・賃料・住所などの文字情報はすべて既存GAS
-# （gas/src/RentalDataLookup.ts の updateSlideWithData()）が
-# Slides側にreplaceAllTextで焼き込んでからエクスポートするため、
-# ここでは text_fields を持たない（Python側で文字を描画し直すと二重管理になる）。
-# text_fields描画機能自体はcompositor.pyに残しているので、将来
-# 別の理由でPython側描画が必要になった場合はこのYAMLに追記すればよい。
+# 重要: 建物名・賃料・住所などの文字情報はすべて既存GAS（コード.js の
+# updateSlideWithData()）がSlides側にreplaceAllTextで焼き込んでから
+# エクスポートするため、ここでは text_fields を持たない。
 #
-# 写真配置座標（image_slots）は未確定。実際のSlidesファイル
-# （1QB2132Hz0XMREBKmxddQTp-9S34dijgy2oUeBODyVtM）に仮の画像を配置し、
-# 「レイアウト情報取得」メニュー（LayoutCaptureTool.ts）でEMU単位の座標を取得、
-# px（このYAMLのdpi基準）へ変換した上でimage_slotsへ追記すること。
-# 手順の詳細は docs/template_config_spec.md を参照。
-# 座標が確定するまでは背景（Slidesエクスポート画像）のみの状態とする。
+# 写真配置座標（image_slots）は実際のSlidesファイル
+# （1QB2132Hz0XMREBKmxddQTp-9S34dijgy2oUeBODyVtM）に配置したプレースホルダーを
+# 「レイアウト情報取得」で取得し、A3基準pxへ換算した値（2026-09-09確定）。
+# general/in_house_guarantee も画像配置は共通のため同じ値を使う。
 
 template_type: in_house
 display_name: "自社マイソク"
 slides_template_file_id: "1QB2132Hz0XMREBKmxddQTp-9S34dijgy2oUeBODyVtM"
 
 page_size:
-  width_mm: 420   # A3 横向き（要確認: 実際のSlidesページの向き・サイズと一致するか）
+  width_mm: 420
   height_mm: 297
 dpi: 300
 
-# 要確認: 実際に必須とすべき写真の種類・ファイル名（living.jpg等の命名規則含む）。
-# LayoutCaptureToolでの座標取得と合わせて確定させる。
-required_images: []
+required_images: ["間取り", "外観", "キッチン", "浴室", "画像1", "画像2"]
 optional_images: []
 
 image_slots:
@@ -40,5 +32,56 @@ image_slots:
     width_px: 4961
     height_px: 3508
     fit: stretch
+
+  - key: 間取り
+    source: nas
+    source_filename: 間取り
+    x_px: 219
+    y_px: 1315
+    width_px: 1423
+    height_px: 1529
+
+  - key: 外観
+    source: nas
+    source_filename: 外観
+    # 建物直下(戸建の場合は部屋番号フォルダの中)。job_processor.pyが
+    # 建物一覧シートを見て戸建なら自動でroomスコープへ切り替える。
+    source_scope: building
+    x_px: 126
+    y_px: 628
+    width_px: 794
+    height_px: 675
+
+  - key: キッチン
+    source: nas
+    source_filename: キッチン
+    x_px: 942
+    y_px: 626
+    width_px: 821
+    height_px: 679
+
+  - key: 浴室
+    source: nas
+    source_filename: 浴室
+    x_px: 1785
+    y_px: 2088
+    width_px: 733
+    height_px: 757
+
+  - key: 画像1
+    source: nas
+    source_filename: 画像1
+    x_px: 1785
+    y_px: 624
+    width_px: 733
+    height_px: 684
+
+  - key: 画像2
+    source: nas
+    source_filename: 画像2
+    x_px: 1785
+    y_px: 1319
+    width_px: 733
+    height_px: 757
 
 text_fields: []
