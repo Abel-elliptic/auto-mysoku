@@ -131,6 +131,25 @@ def process(
     sheets.report_completed(job, nas_path.as_posix(), drive_ref)
     logger.info("job_completed", extra={"job_row_id": job.row_id, "stage": "completed"})
 
+    _cleanup_background(job, drive)
+
+
+def _cleanup_background(job: JobRow, drive: DriveClient) -> None:
+    """COMPLETED後、合成に使い終えた一時保存の背景PNGをDriveから削除する。
+
+    完成品は既にNAS/Driveへ書き込み済み・シートへも報告済みのため、この
+    削除に失敗してもジョブ自体は失敗させない（次回の手動整理に任せる）。
+    """
+    background_ref = job.values.get("background_ref")
+    if not background_ref:
+        return
+    try:
+        drive.delete_file(background_ref)
+    except Exception:
+        logger.warning(
+            "background_cleanup_failed", extra={"job_row_id": job.row_id, "stage": "cleanup"}
+        )
+
 
 def _fetch_background(job: JobRow, drive: DriveClient) -> bytes | None:
     background_ref = job.values.get("background_ref")  # 要確認: 実カラム名/存在有無
