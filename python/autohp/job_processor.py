@@ -21,8 +21,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from autohp.compositor import RoomImages, check_required_images, composite_flyer
 from autohp.config import Settings
@@ -44,6 +45,12 @@ FILENAME_PREFIX = {
 
 # このテンプレート種別の完成品のみ、NASに加えてDriveへもアップロードする。
 DRIVE_UPLOAD_TEMPLATE_TYPES = {"general", "in_house_guarantee"}
+
+# NASファイル名の日付は日本の営業日基準（JST）で付与する。社内PCはOS設定に
+# 関わらずこの固定タイムゾーンで計算するため、サーバーのタイムゾーン設定に
+# 依存しない（datetime.now(UTC)のままだとJST 0時〜9時台にUTCの前日日付が
+# 付いてしまうバグがあったため修正）。
+JST = ZoneInfo("Asia/Tokyo")
 
 # NAS出力先で、建物名/部屋番号の下に置く固定のサブフォルダ名
 # （テンプレート種別を問わず同じフォルダに、ファイル名の接頭辞で区別して並べる）。
@@ -117,7 +124,7 @@ def process(
     safe_room_name = sanitize_segment(room_name)
     filename = f"{prefix}{safe_building_name}{safe_room_name}.jpg"
 
-    today = datetime.now(UTC).date().isoformat().replace("-", "")
+    today = datetime.now(JST).date().isoformat().replace("-", "")
     nas_path = safe_join(
         settings.nas_output_root, building_name, room_name, NAS_OUTPUT_SUBFOLDER, f"{today}_{filename}"
     )
