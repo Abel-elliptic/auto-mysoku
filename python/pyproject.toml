@@ -11,6 +11,10 @@ dependencies = [
     "smbprotocol>=1.13",
     "Pillow>=10.2",
     "PyYAML>=6.0",
+    # WindowsにはIANAタイムゾーンDBが同梱されていないため、
+    # zoneinfo.ZoneInfo("Asia/Tokyo")を使うには明示的に必要
+    # （Linux/macOSはOS側にDBがあるため本来は不要だが、環境を問わず動くよう常に入れる）。
+    "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
