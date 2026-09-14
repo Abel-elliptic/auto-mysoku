@@ -49,6 +49,10 @@ DRIVE_UPLOAD_TEMPLATE_TYPES = {"general", "in_house_guarantee"}
 # （テンプレート種別を問わず同じフォルダに、ファイル名の接頭辞で区別して並べる）。
 NAS_OUTPUT_SUBFOLDER = "マイソク"
 
+# 完成品JPEGの目標上限サイズ（バイト）。NAS/Driveの容量節約のため、画質・
+# 解像度を段階的に落としてこのサイズ以下に収める。
+MAX_OUTPUT_BYTES = 300_000
+
 # 部屋の写真（間取り・外観・キッチン等）は部屋によって拡張子がjpg/pngなど
 # バラバラなため、ImageSlot.source_filenameに拡張子を含めない場合はこの順で
 # 試す（見つかった最初のものを使う）。既に拡張子を含む値（"." を含む）を
@@ -145,8 +149,14 @@ def _cleanup_background(job: JobRow, drive: DriveClient) -> None:
         return
     try:
         drive.delete_file(background_ref)
+        logger.info(
+            "background_cleanup_ok", extra={"job_row_id": job.row_id, "stage": "cleanup"}
+        )
     except Exception:
-        logger.warning(
+        # ローカルログにのみ原因を残す（シートには一切書かない）。よくある原因は
+        # サービスアカウントへのBACKGROUND_DRIVE_FOLDER_ID共有権限が「閲覧者」の
+        # ままで「編集者」に上げられていないケース（削除には編集者権限が必要）。
+        logger.exception(
             "background_cleanup_failed", extra={"job_row_id": job.row_id, "stage": "cleanup"}
         )
 
@@ -197,9 +207,36 @@ def _fetch_room_images(
     return result
 
 
-def _jpeg_bytes(image: object) -> bytes:
+def _jpeg_bytes(image: object, max_bytes: int = MAX_OUTPUT_BYTES) -> bytes:
+    """MAX_OUTPUT_BYTES以下になるまで、まず画質→それでも収まらなければ
+    解像度を段階的に落としてJPEGへエンコードする。
+
+    印刷用途のためいきなり低画質にはせず、まず画質(quality)側で絞り、
+    画質を最低ラインまで落としても収まらない場合のみ解像度を縮小する
+    （縦横比は維持）。
+    """
     from io import BytesIO
 
-    buf = BytesIO()
-    image.save(buf, format="JPEG", quality=92)  # type: ignore[attr-defined]
-    return buf.getvalue()
+    def encode(img: object, quality: int) -> bytes:
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=quality)  # type: ignore[attr-defined]
+        return buf.getvalue()
+
+    quality = 90
+    data = encode(image, quality)
+    while len(data) > max_bytes and quality > 40:
+        quality -= 10
+        data = encode(image, quality)
+
+    current_image = image
+    scale = 0.9
+    while len(data) > max_bytes and scale > 0.3:
+        width, height = current_image.size  # type: ignore[attr-defined]
+        resized = current_image.resize(  # type: ignore[attr-defined]
+            (max(1, int(width * scale)), max(1, int(height * scale)))
+        )
+        data = encode(resized, quality)
+        current_image = resized
+        scale -= 0.1
+
+    return data
