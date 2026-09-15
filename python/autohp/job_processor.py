@@ -142,13 +142,6 @@ def process(
     sheets.report_completed(job, nas_path.as_posix(), drive_ref)
     logger.info("job_completed", extra={"job_row_id": job.row_id, "stage": "completed"})
 
-    # 一時保存の背景PNGの削除はGAS側（gas/src/BackgroundCleanup.ts、
-    # 時間主導型トリガーで定期実行）が担当する。この背景PNGはGAS実行時の
-    # Googleアカウントが所有者であり、サービスアカウント（Python側）は
-    # 非所有者の編集者止まりのため、Drive側の共有ポリシー次第では削除
-    # （ゴミ箱への移動を含む）が拒否されることが実際にあった。所有者自身の
-    # GASに削除させることで、この権限問題を構造的に回避する。
-
 
 def _fetch_background(job: JobRow, drive: DriveClient) -> bytes | None:
     background_ref = job.values.get("background_ref")  # 要確認: 実カラム名/存在有無

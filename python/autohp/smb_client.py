@@ -15,6 +15,7 @@ import logging
 import uuid
 from typing import Self
 
+import spnego
 from smbprotocol.connection import Connection
 from smbprotocol.exceptions import SMBException
 from smbprotocol.session import Session
@@ -25,6 +26,25 @@ from autohp.errors import TransientError
 from autohp.path_safety import SafePath
 
 logger = logging.getLogger("autohp.smb")
+
+# Windowsのタスクスケジューラで非対話ログオン（SYSTEMアカウントやS4U）から
+# ポーラーを起動すると、smbprotocolが認証に使うpyspnegoが既定で選ぶ
+# Windowsネイティブ実装(SSPI)経由のNTLM認証が
+# 「パッケージに提供された資格情報は認識されませんでした」で失敗する
+# （SSPIの明示的な資格情報によるNTLM認証は対話ログオンセッションでしか
+# 動かないというWindows側の制約。手動でターミナルを開いて実行した場合は
+# 対話セッションなので発生しない）。
+# NegotiateOptions.use_ntlm を強制し、SSPIを迂回してpyspnego純正Python実装の
+# NTLMを使わせることで、非対話セッションでも認証できるようにする。
+_original_spnego_client = spnego.client
+
+
+def _spnego_client_force_ntlm(*args: object, **kwargs: object) -> spnego.ContextProxy:
+    kwargs["options"] = kwargs.get("options", spnego.NegotiateOptions.none) | spnego.NegotiateOptions.use_ntlm
+    return _original_spnego_client(*args, **kwargs)
+
+
+spnego.client = _spnego_client_force_ntlm
 
 
 class SmbClient:
