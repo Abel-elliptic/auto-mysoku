@@ -15,9 +15,11 @@ import logging
 import uuid
 from typing import Self
 
+import errno
+
 import spnego
 from smbprotocol.connection import Connection
-from smbprotocol.exceptions import SMBException
+from smbprotocol.exceptions import SMBException, SMBOSError
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
 
@@ -101,6 +103,19 @@ class SmbClient:
                 return f.read()
         except FileNotFoundError:
             raise
+        except SMBOSError as exc:
+            # SMBOSErrorはOSErrorのサブクラスだが、Python標準のFileNotFoundError
+            # (OSErrorのサブクラス)自体は継承していないため、ファイル未存在
+            # (STATUS_OBJECT_NAME_NOT_FOUND等、errno=ENOENT)でもここに来る。
+            # 呼び出し側(_fetch_room_images)はFileNotFoundErrorで拡張子違いの
+            # 候補を試す設計のため、ここで変換しないと「ファイルが無いだけ」の
+            # ケースがTransientError（NAS接続失敗扱いで無限リトライ）になってしまう。
+            if exc.errno == errno.ENOENT:
+                raise FileNotFoundError(str(exc)) from exc
+            raise TransientError(
+                "NAS上のファイル読み込みに失敗しました。",
+                detail=f"SMB read failed for {path.as_posix()}: {exc}",
+            ) from exc
         except SMBException as exc:
             raise TransientError(
                 "NAS上のファイル読み込みに失敗しました。",
