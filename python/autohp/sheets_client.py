@@ -17,10 +17,9 @@ from datetime import UTC, datetime
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
 from autohp.config import Settings
-from autohp.errors import TransientError
+from autohp.errors import GOOGLE_API_TRANSIENT_ERRORS, TransientError
 
 logger = logging.getLogger("autohp.sheets")
 
@@ -107,7 +106,7 @@ class SheetsClient:
                 .get(spreadsheetId=self._spreadsheet_id, range=f"{BUILDING_LIST_SHEET_NAME}!A2:C")
                 .execute()
             )
-        except HttpError as exc:
+        except GOOGLE_API_TRANSIENT_ERRORS as exc:
             raise TransientError("建物一覧の取得に失敗しました。", detail=str(exc)) from exc
 
         for row in resp.get("values", []):
@@ -122,7 +121,7 @@ class SheetsClient:
                 .get(spreadsheetId=self._spreadsheet_id, range=f"{JOB_SHEET_NAME}!A2:{_LAST_COL_LETTER}")
                 .execute()
             )
-        except HttpError as exc:
+        except GOOGLE_API_TRANSIENT_ERRORS as exc:
             raise TransientError("ジョブ一覧の取得に失敗しました。", detail=str(exc)) from exc
 
         rows: list[JobRow] = []
@@ -192,7 +191,7 @@ class SheetsClient:
                 )
                 .execute()
             )
-        except HttpError as exc:
+        except GOOGLE_API_TRANSIENT_ERRORS as exc:
             raise TransientError("ジョブ行の再読込に失敗しました。", detail=str(exc)) from exc
         raw = (resp.get("values") or [[]])[0]
         padded = raw + [""] * (len(JOB_COLUMNS) - len(raw))
@@ -211,7 +210,7 @@ class SheetsClient:
                 spreadsheetId=self._spreadsheet_id,
                 body={"valueInputOption": "RAW", "data": data},
             ).execute()
-        except HttpError as exc:
+        except GOOGLE_API_TRANSIENT_ERRORS as exc:
             raise TransientError("ジョブ行の更新に失敗しました。", detail=str(exc)) from exc
 
 

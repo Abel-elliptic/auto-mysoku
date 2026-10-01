@@ -7,6 +7,19 @@ job_poller / job_processor が「リトライすべきか」「即座に諦め�
 
 from __future__ import annotations
 
+import http.client
+import ssl
+
+from googleapiclient.errors import HttpError
+
+# Google API呼び出し(Sheets/Drive)で「サーバーが実際にHTTPレスポンスを返した
+# エラー」はHttpErrorになるが、リクエスト送受信中に接続自体が切れた場合
+# (ssl.SSLEOFError・ConnectionResetError等のOSError・
+# http.client.RemoteDisconnected等)はHttpErrorにならない。これらは
+# いずれも再試行すれば解決しうる一時的なネットワーク瞬断であり、
+# sheets_client.py/drive_client.pyの各APIラッパーはこのタプルをまとめて
+# TransientErrorに変換する。
+
 
 class AutoHPError(Exception):
     """基底クラス。直接送出しない。"""
@@ -40,3 +53,6 @@ class PathSafetyError(PermanentError):
 
 class MissingRequiredImageError(PermanentError):
     """テンプレートが必須と定義した画像スロットがNAS上に存在しない場合。"""
+
+
+GOOGLE_API_TRANSIENT_ERRORS = (HttpError, ssl.SSLError, OSError, http.client.HTTPException)
