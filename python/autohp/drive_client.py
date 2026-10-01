@@ -17,8 +17,10 @@ Drive共有権限は「閲覧者」のままでよい。
 
 from __future__ import annotations
 
+import http.client
 import io
 import logging
+import ssl
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -31,6 +33,14 @@ from autohp.errors import TransientError
 logger = logging.getLogger("autohp.drive")
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+
+# HttpErrorはサーバーからHTTPレスポンスが返ってきた場合(4xx/5xx等)のみ発生する。
+# SSL/TCP接続がレスポンス受信前に切れた場合(ssl.SSLError/OSError/
+# http.client.HTTPException、例: SSLEOFError, ConnectionResetError)は
+# HttpErrorでは捕捉できず、未分類の例外としてジョブがリトライなしでERRORに
+# なってしまっていた。これらは一時的なネットワーク瞬断であり再試行で解決
+# する性質のエラーのため、TransientErrorとして扱う。
+_TRANSIENT_NETWORK_ERRORS = (HttpError, ssl.SSLError, OSError, http.client.HTTPException)
 
 
 class DriveClient:
@@ -49,7 +59,7 @@ class DriveClient:
             while not done:
                 _, done = downloader.next_chunk()
             return buf.getvalue()
-        except HttpError as exc:
+        except _TRANSIENT_NETWORK_ERRORS as exc:
             raise TransientError(
                 "背景画像の取得に失敗しました。", detail=f"Drive download failed for {file_id}: {exc}"
             ) from exc
