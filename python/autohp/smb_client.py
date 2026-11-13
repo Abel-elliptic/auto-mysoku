@@ -11,11 +11,10 @@ smbclient 高水準APIが使えない特殊な認証要件があれば要調整�
 
 from __future__ import annotations
 
+import errno
 import logging
 import uuid
 from typing import Self
-
-import errno
 
 import spnego
 from smbprotocol.connection import Connection

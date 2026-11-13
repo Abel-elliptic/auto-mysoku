@@ -10,10 +10,10 @@
 5. 必須画像の欠損チェック → 欠損があればジョブ全体をPermanentErrorにする
 6. 合成 → A3サイズの完成品画像を生成（A4は作らない）
 7. NASの出力先へ書き込み: {nas_output_root}/{building_name}/{room_name}/マイソク/
-   {yyyymmdd}_{ファイル名}.jpg
+   {yyyymmdd}_{ファイル名}.pdf
 8. 一般(general)・自社保証会社(in_house_guarantee)の完成品のみ、さらに
    settings.finished_drive_dir（社内PCでGoogle Drive for Desktop等により
-   同期されているローカルフォルダ）へも {ファイル名}.jpg（日付なし）で保存する
+   同期されているローカルフォルダ）へも {ファイル名}.pdf（日付なし）で保存する
    （自社用(in_house)はNASのみ。Drive APIは使わずローカルファイル書き込みで済ませる）
 9. 完了報告
 """
@@ -56,8 +56,8 @@ JST = ZoneInfo("Asia/Tokyo")
 # （テンプレート種別を問わず同じフォルダに、ファイル名の接頭辞で区別して並べる）。
 NAS_OUTPUT_SUBFOLDER = "マイソク"
 
-# 完成品JPEGの目標上限サイズ（バイト）。NAS/Driveの容量節約のため、画質・
-# 解像度を段階的に落としてこのサイズ以下に収める。
+# 完成品PDFの目標上限サイズ（バイト）。NAS/Driveの容量節約のため、PDFに
+# 埋め込む前のJPEG側で画質・解像度を段階的に落としてこのサイズ以下に収める。
 MAX_OUTPUT_BYTES = 300_000
 
 # 部屋の写真（間取り・外観・キッチン等）は部屋によって拡張子がjpg/pngなど
@@ -110,7 +110,7 @@ def process(
     )
 
     flyer_image = composite_flyer(template, room_data, background_img, images)
-    flyer_bytes = _jpeg_bytes(flyer_image)
+    flyer_bytes = _pdf_bytes(flyer_image)
 
     prefix = FILENAME_PREFIX.get(job.template_type)
     if prefix is None:
@@ -122,7 +122,7 @@ def process(
     # （safe_join()と同じホワイトリストチェック。パス区切り文字等は通らない）。
     safe_building_name = sanitize_segment(building_name)
     safe_room_name = sanitize_segment(room_name)
-    filename = f"{prefix}{safe_building_name}{safe_room_name}.jpg"
+    filename = f"{prefix}{safe_building_name}{safe_room_name}.pdf"
 
     today = datetime.now(JST).date().isoformat().replace("-", "")
     nas_path = safe_join(
@@ -222,3 +222,21 @@ def _jpeg_bytes(image: object, max_bytes: int = MAX_OUTPUT_BYTES) -> bytes:
         scale -= 0.1
 
     return data
+
+
+def _pdf_bytes(image: object, max_bytes: int = MAX_OUTPUT_BYTES) -> bytes:
+    """完成品を1ページのPDFとして出力する（NAS/Drive保存ともに画像ではなくPDFに統一）。
+
+    _jpeg_bytes()でサイズ上限まで圧縮したJPEGを、そのままPDFのページ画像として
+    埋め込む。PillowはJPEGから読み込んだ画像をPDF保存する際、ピクセルデータを
+    再エンコードせずDCTDecodeとしてそのまま流用するため、PDFのサイズはこの
+    JPEGとほぼ変わらない（素のビットマップをPDF化する場合に比べてずっと小さい）。
+    """
+    from io import BytesIO
+
+    from PIL import Image
+
+    jpeg_data = _jpeg_bytes(image, max_bytes)
+    pdf_buf = BytesIO()
+    Image.open(BytesIO(jpeg_data)).save(pdf_buf, format="PDF")
+    return pdf_buf.getvalue()
